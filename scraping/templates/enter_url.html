@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %} Submit url {% endblock title %}
+
+
+{% block body %}
+
+<div class="container col-md-4 mt-5 py-3 bg-secondary"> 
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label id="link" class="form-label">Enter link:</label>
+          <input type="text" class="form-control" name="link">
+        </div>
+
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+      {% for link in links %}
+      {{link}}
+  {% endfor %}
+</div>
+{% endblock body %}
+
