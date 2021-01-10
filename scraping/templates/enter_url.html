@@ -1,22 +1,26 @@
 {% extends 'base.html' %}
 {% block title %} Submit url {% endblock title %}
 
-
 {% block body %}
 
-<div class="container col-md-4 mt-5 py-3 bg-secondary"> 
-    <form method="POST">
-        {% csrf_token %}
-        <div class="mb-3">
-          <label id="link" class="form-label">Enter link:</label>
-          <input type="text" class="form-control" name="link">
-        </div>
+<!-- <div class="container col-md-4 mt-5 py-3 bg-secondary"> 
+  <button class="btn btn-primary" onclick="logout()">Log Out</button>
+</div> -->
 
-        <button type="submit" class="btn btn-primary">Submit</button>
-      </form>
-      {% for link in links %}
-      {{link}}
-  {% endfor %}
-</div>
+  <div class="container col-md-4 mt-1 py-3 bg-secondary"> 
+    <div class="mb-3">
+      <label class="form-label">Enter link:</label>
+        <input id="url" type="text" class="form-control" name="url">
+      </div>
+    <button class="btn btn-primary" onclick="check_url()">Submit</button>
+    <div id="message"></div>
+  </div>
+
+<script>
+  $(document).ready(function() {
+    verify();
+});
+</script>
+
+
 {% endblock body %}
-

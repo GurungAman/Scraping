@@ -6,28 +6,32 @@ from PIL import Image
 from selenium import webdriver
 import requests
 from bs4 import BeautifulSoup
+from selenium.webdriver.firefox.options import Options
+import cairosvg
 
-
-internal_urls = set()
-external_urls = set()
-total_urls_visited = 0
 
 class Scraping:
 	def __init__(self, url):
-		self.driver = webdriver.Firefox(executable_path='geckodriver', service_log_path=os.devnull)
+		options = Options()
+		options.headless = True
+		self.driver = webdriver.Firefox(options=options, executable_path='geckodriver', service_log_path=os.devnull)
 		self.url = url
+		self.custom_css = 0
+		self.custom_js = 0
 
 	def is_image(self, values):
-		image_extensions = r".jpg|.jpeg|.JPEG|.png|.svg"
+		image_extensions = r".jpg|.jpeg|.JPEG|.png|.svg|.gif"
 		match = re.search(image_extensions, values)
 		if match == None:
 			return False
 		else:
 			return True
-	
-	def is_valid(self, link):
-		parsed = urlparse(link)
-		return bool(parsed.netloc) and bool(parsed.scheme)
+
+	def is_file(self, file):
+		if os.path.isfile(file):
+			return True
+		else:
+			return False
 
 	def get_js(self):
 		driver = self.driver
@@ -35,20 +39,25 @@ class Scraping:
 		script_tags = driver.find_elements_by_tag_name('script')
 		js_files = []
 		folder_name = self.url.split("/")[2]
-		f_path = os.path.join(os.getcwd(), "files", folder_name, "js_files/")
-		if not os.path.isdir(os.getcwd()+"/files/"+folder_name+"/js_files/"):
-			os.makedirs(os.getcwd()+"/files/"+folder_name+"/js_files/")
+		f_path = os.path.join(os.getcwd(), "scraping", "files", folder_name, "js_files/")
+		if not os.path.isdir(os.getcwd()+"/scraping/files/"+folder_name+"/js_files/"):
+			os.makedirs(os.getcwd()+"/scraping/files/"+folder_name+"/js_files/")
 		for scripts in script_tags:
 			if scripts.get_attribute('type') == "text/javascript" or scripts.get_attribute('type') == "":
 					if scripts.get_attribute('src') != "":
 						links = scripts.get_attribute('src')
 						r = requests.get(links)
 						file_name = links.split("/")[-1]
-						content = str(r.content)
-						with open(f_path + file_name, "w") as f:
-							f.write(content)
+						content = str(r.content.decode("utf-8"))
+						if not self.is_file(f_path+file_name):
+							with open(f_path + file_name, "w") as f:
+								print(f"Downloading {file_name}.js")
+								f.write(content)
+						else:
+							continue
 					else:
-						with open(f_path+folder_name+".js", "a+") as f:
+						with open(f_path+folder_name+f" {self.custom_js}.js", "w+") as f:
+							self.custom_js += 1
 							f.write(scripts.get_attribute('innerHTML'))
 		return js_files
 
@@ -68,15 +77,31 @@ class Scraping:
 				if self.is_image(item) == True:
 					images.append(item)   
 		folder_name = self.url.split("/")[2]
-		file_path = os.path.join(os.getcwd(), "files", folder_name, "images/") 
+		file_path = os.path.join(os.getcwd(), "scraping", "files", folder_name, "images/") 
 		if not os.path.isdir(file_path):
-			os.makedirs(os.getcwd()+"/files/"+folder_name+"/images/")        
+			os.makedirs(os.getcwd()+"/scraping/files/"+folder_name+"/images/")        
 		for image in images:
-			r = requests.get(image)
-			content = BytesIO(r.content)
-			image_name = image.split("/")[-1]
-			img = Image.open(content)
-			img.save(file_path+image_name)
+			try:  
+				image_name = image.split("/")
+				image_name = image_name[-2]+"-"+image_name[-1].split(".")[0]+".png"
+				if ".svg" in image:
+					if not self.is_file(file_path+image_name):
+						print(f"Downloading image: {image_name}")
+						cairosvg.svg2png(url=image, write_to=file_path+image_name)
+					else:
+						continue
+				else:
+					r = requests.get(image)
+					content = BytesIO(r.content)
+					image_name = image.split("/")[-1]+".png"
+					if not self.is_file(file_path+image_name):
+						print(f"Downloading image: {image_name}")
+						img = Image.open(content)
+						img.save(file_path+image_name)
+					else:
+						continue
+			except Exception as e:
+				print(f"{e}")
 		return images
 
 	def get_css(self):
@@ -84,73 +109,33 @@ class Scraping:
 		driver.get(self.url)
 		css_tags = driver.find_elements_by_tag_name('link')
 		folder_name = self.url.split("/")[2]
-		file_path = os.path.join(os.getcwd(), "files", folder_name, "css/") 
+		file_path = os.path.join(os.getcwd(), "scraping", "files", folder_name, "css/") 
 		css_files = []
 		if not os.path.isdir(file_path):
-			os.makedirs(os.getcwd()+"/files/"+folder_name+"/css/")
-		for css in range(len(css_tags)):
-			if css_tags[css].get_attribute("rel") == "stylesheet" or css_tags[css].get_attribute("type") == "text/css":
-				links = css_tags[css].get_attribute("href")
+			os.makedirs(os.getcwd()+"/scraping/files/"+folder_name+"/css/")
+		for css in css_tags:
+			if css.get_attribute("rel") == "stylesheet" or css.get_attribute("type") == "text/css":
+				links = css.get_attribute("href")
+				css_file_name = links.split("/")[-1]
+				if len(css_file_name) > 50:
+					css_file_name = links.split("/")[-1][-40:]
 				r = requests.get(links)
-				content = str(r.content)
-				with open(file_path + str(css)+"_file.css", "w") as f:
-					f.write(content)
+				content = str(r.content.decode("utf-8"))
+				if not self.is_file(file_path+css_file_name+".css"):
+					with open(file_path + css_file_name+".css", "w") as f:
+						print(f"Downloading {css_file_name}")
+						f.write(content)
+				else:
+					continue
 		style_tags = driver.find_elements_by_tag_name("style")
 		for css in style_tags:
 			if css.get_attribute("type") == "text/css":
-				with open(file_path+folder_name+".css", "a+") as f:
-					f.write(css.get_attribute("innerHTML"))  
+				if not self.is_file(file_path+f"{self.custom_css}_file.css"):
+					with open(file_path+folder_name+f" {self.custom_css}_file.css", "w+") as f:
+						print(f"Downloading {self.count_css}_file")
+						self.custom_css+=1
+						f.write(css.get_attribute("innerHTML"))  
 		return css_files
-
-	def get_links(self):
-		urls = set()
-		domain_name = urlparse(self.url).netloc
-		soup = BeautifulSoup(requests.get(self.url).content, "html.parser")
-		for a_tag in soup.findAll("a"):
-			href = a_tag.attrs.get("href")
-			if href == "" or href is None:
-				continue
-			href = urljoin(self.url, href)
-			parsed_href = urlparse(href)
-			href = parsed_href.scheme + "://" + parsed_href.netloc + parsed_href.path
-			if not self.is_valid(href):
-				continue
-			if href in internal_urls:
-				continue
-			if domain_name not in href:
-				if href not in external_urls:
-					external_urls.add(href)
-				continue
-			if not self.is_image(href):
-				urls.add(href)
-				internal_urls.add(href)
-				print(f"Internal Link: {href}")
-		return urls
-
-
-	def crawl(self, max_urls=30):
-		global total_urls_visited
-		total_urls_visited += 1
-		links = self.get_links()
-		for link in links:
-			if total_urls_visited > max_urls:
-				break
-			crawl(link, max_urls=max_urls)
 
 	def tear_down(self):
 		self.driver.quit()
-
-	
-if __name__ == "__main__":
-	url="https://miteritreks.com/"
-	scrap = Scraping(url)
-	try:
-		# folder_name = url.split("/")[2]
-		# file_path = os.path.join(os.getcwd(), "files", folder_name, "links/internal_links.txt") 
-		# f = open(file_path, "r")
-		# links = f.read().splitlines()
-		# for link in links:
-		# 	scrap.get_js()
-		# f.close()
-	finally:
-		scrap.tear_down()

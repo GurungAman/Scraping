@@ -15,10 +15,15 @@ Including another URLconf
 """
 
 from django.urls import path
+from rest_framework_jwt.views import obtain_jwt_token
 from . import views
 
 urlpatterns = [
-    path('', views.log_in, name="log_in"),
-    path('scrape/', views.scrape, name="scrape"),
-    path('details/', views.details_view.as_view(), name="details"),
+    path('', views.log_in_template, name="log_in"),
+    path('scrape/', views.scrape_template, name="scrape"),
+    path('completed/', views.complete_template),
+    
+    path('get_token/',obtain_jwt_token),
+    path('verify_token/', views.verify),
+    path('check_url/', views.check_url),
 ]
