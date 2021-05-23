@@ -51,18 +51,29 @@ function verify(){
     });
 };
 
+
 function check_url(){
     var link = $('#url').val()
+    var single_page = $('#single_page').is(':checked')
+    var whole_site = $('#whole_page').is(':checked')
+    var get_images = $('#get_images').is(':checked')
+    var get_js = $('#get_js').is(':checked')
+    var get_css = $('#get_css').is(':checked')
+    var internal_links = $('#internal_links').is(':checked')
     $.ajax({
         url: "/check_url/",
         type: "POST",
         data: JSON.stringify({
-            'url' : link 
+            'url' : link,
+            'single_page': single_page,
+            'whole_site': whole_site,
+            'get_images': get_images,
+            'get_js': get_js,
+            'get_css': get_css,
+            'get_links': internal_links
         }),
         success:function(data){
-            console.log(data)
             if (data['status'] == true){
-                console.log("success")
                 window.location.href = "http://127.0.0.1:8000/completed/"
             }
             else {
