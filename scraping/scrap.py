@@ -1,11 +1,9 @@
 import os
 import re
 from io import BytesIO
-from urllib.parse import urlparse, urljoin
 from PIL import Image
 from selenium import webdriver
 import requests
-from bs4 import BeautifulSoup
 from selenium.webdriver.firefox.options import Options
 import cairosvg
 
@@ -101,7 +99,7 @@ class Scraping:
 					else:
 						continue
 			except Exception as e:
-				print(f"{e}")
+				print(e.__class__)
 		return images
 
 	def get_css(self):

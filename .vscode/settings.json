@@ -1,4 +1,4 @@
 {
-    "python.pythonPath": "/home/aman/Documents/scraping/bin/python3",
+    "python.pythonPath": "/home/aman/Documents/scraping/env/bin/python3",
     "git.enabled": false,
 }

@@ -1,10 +1,8 @@
 import requests
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
-from selenium.webdriver.firefox.options import Options
-from selenium import webdriver
-import os
 import re
+import os
 
 class site_map:
 	def __init__(self):
@@ -14,7 +12,7 @@ class site_map:
 		self.total_urls_visited = 0
 	
 	def count_links(self):
-		return len(self.internal_urls), len(self.external_urls)
+		return len(self.internal_urls)
 
 	def is_image(self, values):
 		image_extensions = r".jpg|.jpeg|.JPEG|.png|.svg|.JPG|.gif"
@@ -59,7 +57,7 @@ class site_map:
 				self.internal_urls.add(href)
 		return self.urls
 
-	def crawl(self, url, max_urls=20):
+	def crawl(self, url, max_urls=1):
 		self.total_urls_visited += 1
 		links = self.get_all_website_links(url)
 		for link in links:
@@ -68,7 +66,8 @@ class site_map:
 			self.crawl(link)
 
 	def save_to_file(self, url):
-		folder_name = url.split("/")[2]
+		# folder_name = url.split("/")[2]
+		folder_name = urlparse(url).netloc
 		file_path = os.path.join(os.getcwd(), "scraping", "files", folder_name, "links/") 
 		if not os.path.isdir(file_path):
 			os.makedirs(os.getcwd()+"/scraping/files/"+folder_name+"/links/")
@@ -79,6 +78,8 @@ class site_map:
 				internal_link_file.write(link+"\n")
 			for link in self.external_urls:
 				external_link_file.write(link+"\n")
+		except Exception as e:
+			print(e.__class__)
 		finally:
 			internal_link_file.close()
 			external_link_file.close()
