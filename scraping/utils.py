@@ -1,5 +1,6 @@
-from scraping.site_map import site_map
-from scraping.scrap import Scraping
+from .site_map import site_map
+from .scrap import Scraping
+import os
 
 def download_files(data_json):
     try:
@@ -26,16 +27,12 @@ def count_files(url):
     return total_files
 
 
-def download_urls(url, single_page=True):
+def download_urls(url):
     try:
         s = site_map()
-        if not single_page:
-            s.crawl(url)
-            internal_links = s.count_links()
-            return internal_links
-        elif single_page:
-            return url
-        
+        s.crawl(url)
+        internal_links = s.count_links()
+        return internal_links
     except Exception as e:
         print(e.__class__)
     finally:

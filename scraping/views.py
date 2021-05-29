@@ -4,7 +4,7 @@ import os
 from urllib.parse import urlparse
 from django.http import JsonResponse
 from rest_framework_jwt.serializers import VerifyJSONWebTokenSerializer
-from scraping.utils import download_urls, count_files, download_files
+from .utils import download_urls, count_files, download_files
 # Create your views here.
 
 def log_in_template(request):
@@ -62,30 +62,27 @@ def check_url(request):
         # folder_name = data_json['url'].split("/")[2]
         url = data_json['url']
         folder_name = urlparse(url).netloc
-        print(folder_name)
-        
         
         if data_json['get_links']:
-            download_urls(data_json['url'], single_page=False)
+            download_urls(data_json['url'])
         if data_json['single_page']:
-            download_urls(data_json['url'], single_page=True)
             print(f"Current scraping Link: {url}")
             download_files(data_json=data_json)
         
         if data_json['whole_site']:
+            download_urls(data_json['url'])
             file_path = os.path.join(os.getcwd(), "scraping/files", folder_name, "links/internal_links.txt")
             try:
                 reader = open(file_path, "r")
-                download_urls(data_json['url'], single_page=False)
                 for links in reader:
                     link = links.strip("\n")
                     print(f"Current scraping Link: {link}")
+                    data_json['url'] = link
                     download_files(data_json=data_json)
             except Exception as e:
                 print(e.__class__)
             finally:
                 reader.close()
-        zip_files(folder_name)
         total_files = count_files(folder_name)
         print(total_files)
         response["data"] = total_files
@@ -93,6 +90,3 @@ def check_url(request):
     else:
         response['status'] = False
         return JsonResponse(response)
-
-
-

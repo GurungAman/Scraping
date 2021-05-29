@@ -57,7 +57,7 @@ class site_map:
 				self.internal_urls.add(href)
 		return self.urls
 
-	def crawl(self, url, max_urls=1):
+	def crawl(self, url, max_urls=20):
 		self.total_urls_visited += 1
 		links = self.get_all_website_links(url)
 		for link in links:
